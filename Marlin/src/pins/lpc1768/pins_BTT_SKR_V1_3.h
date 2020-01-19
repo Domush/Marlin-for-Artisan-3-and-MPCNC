@@ -56,6 +56,19 @@
 #define ONBOARD_ENDSTOPPULLUPS     // Board has built-in pullups
 
 //
+// M3/M4/M5 - Spindle/Laser Control
+//
+#if HAS_CUTTER && !defined(SPINDLE_LASER_ENA_PIN)
+  #if !NUM_SERVOS                         // Use servo connector if possible
+    #define SPINDLE_LASER_ENA_PIN     P0_17   // Pullup or pulldown!
+    #define SPINDLE_LASER_PWM_PIN     P2_07   // Hardware PWM
+    //#define SPINDLE_DIR_PIN           5
+  #else
+    #error "No auto-assignable Spindle/Laser pins available."
+  #endif
+#endif
+
+//
 // Servos
 //
 #ifndef SERVO0_PIN
@@ -100,11 +113,11 @@
   #define Z_CS_PIN         P1_10
 #endif
 
-#define E0_STEP_PIN        P0_28
-#define E0_DIR_PIN         P0_28
-#define E0_ENABLE_PIN      P0_28
+#define E0_STEP_PIN        P1_18
+#define E0_DIR_PIN         P1_18
+#define E0_ENABLE_PIN      P1_18
 #ifndef E0_CS_PIN
-  #define E0_CS_PIN        P0_28
+  #define E0_CS_PIN        P1_18
 #endif
 
 #define E1_STEP_PIN        P2_13
