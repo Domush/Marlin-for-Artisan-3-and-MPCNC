@@ -25,7 +25,7 @@
 #if HAS_TRINAMIC
 
 #include "tmc_util.h"
-#include "../Marlin.h"
+#include "../MarlinCore.h"
 
 #include "../module/stepper/indirection.h"
 #include "../module/printcounter.h"
@@ -281,6 +281,10 @@
       }
     }
 
+  #else
+
+    #define step_current_down(...)
+
   #endif
 
   template<typename TMC>
@@ -288,7 +292,7 @@
     TMC_driver_data data = get_driver_data(st);
     if (data.drv_status == 0xFFFFFFFF || data.drv_status == 0x0) return false;
 
-    bool did_step_down = false;
+    bool should_step_down = false;
 
     if (need_update_error_counters) {
       if (data.is_ot /* | data.s2ga | data.s2gb*/) st.error_count++;
@@ -308,10 +312,8 @@
 
       #if CURRENT_STEP_DOWN > 0
         // Decrease current if is_otpw is true and driver is enabled and there's been more than 4 warnings
-        if (data.is_otpw && st.otpw_count > 4 && st.isEnabled()) {
-          step_current_down(st);
-          did_step_down = true;
-        }
+        if (data.is_otpw && st.otpw_count > 4 && st.isEnabled())
+          should_step_down = true;
       #endif
 
       if (data.is_otpw) {
@@ -325,7 +327,7 @@
       if (need_debug_reporting) report_polled_driver_data(st, data);
     #endif
 
-    return did_step_down;
+    return should_step_down;
   }
 
   void monitor_tmc_drivers() {
@@ -346,64 +348,79 @@
     #endif
 
     if (need_update_error_counters || need_debug_reporting) {
-      #if AXIS_IS_TMC(X)
-        if (monitor_tmc_driver(stepperX, need_update_error_counters, need_debug_reporting)) {
+
+      #if AXIS_IS_TMC(X) || AXIS_IS_TMC(X2)
+      {
+        bool result = false;
+        #if AXIS_IS_TMC(X)
+          if (monitor_tmc_driver(stepperX, need_update_error_counters, need_debug_reporting)) result = true;
+        #endif
+        #if AXIS_IS_TMC(X2)
+          if (monitor_tmc_driver(stepperX2, need_update_error_counters, need_debug_reporting)) result = true;
+        #endif
+        if (result) {
+          #if AXIS_IS_TMC(X)
+            step_current_down(stepperX);
+          #endif
           #if AXIS_IS_TMC(X2)
             step_current_down(stepperX2);
           #endif
         }
+      }
       #endif
-      #if AXIS_IS_TMC(X2)
-        if (monitor_tmc_driver(stepperX2, need_update_error_counters, need_debug_reporting)) {
-          #if AXIS_IS_TMC(X)
-            step_current_down(stepperX);
+
+      #if AXIS_IS_TMC(Y) || AXIS_IS_TMC(Y2)
+      {
+        bool result = false;
+        #if AXIS_IS_TMC(Y)
+          if (monitor_tmc_driver(stepperY, need_update_error_counters, need_debug_reporting)) result = true;
+        #endif
+        #if AXIS_IS_TMC(Y2)
+          if (monitor_tmc_driver(stepperY2, need_update_error_counters, need_debug_reporting)) result = true;
+        #endif
+        if (result) {
+          #if AXIS_IS_TMC(Y)
+            step_current_down(stepperY);
           #endif
-        }
-      #endif
-      #if AXIS_IS_TMC(Y)
-        if (monitor_tmc_driver(stepperY, need_update_error_counters, need_debug_reporting)) {
           #if AXIS_IS_TMC(Y2)
             step_current_down(stepperY2);
           #endif
         }
+      }
       #endif
-      #if AXIS_IS_TMC(Y2)
-        if (monitor_tmc_driver(stepperY2, need_update_error_counters, need_debug_reporting)) {
-          #if AXIS_IS_TMC(Y)
-            step_current_down(stepperY);
-          #endif
-        }
-      #endif
-      #if AXIS_IS_TMC(Z)
-        if (monitor_tmc_driver(stepperZ, need_update_error_counters, need_debug_reporting)) {
-          #if AXIS_IS_TMC(Z2)
-            step_current_down(stepperZ2);
-          #endif
-          #if AXIS_IS_TMC(Z3)
-            step_current_down(stepperZ3);
-          #endif
-        }
-      #endif
-      #if AXIS_IS_TMC(Z2)
-        if (monitor_tmc_driver(stepperZ2, need_update_error_counters, need_debug_reporting)) {
-          #if AXIS_IS_TMC(Z)
-            step_current_down(stepperZ);
-          #endif
-          #if AXIS_IS_TMC(Z3)
-            step_current_down(stepperZ3);
-          #endif
-        }
-      #endif
-      #if AXIS_IS_TMC(Z3)
-        if (monitor_tmc_driver(stepperZ3, need_update_error_counters, need_debug_reporting)) {
+
+      #if AXIS_IS_TMC(Z) || AXIS_IS_TMC(Z2) || AXIS_IS_TMC(Z3) || AXIS_IS_TMC(Z4)
+      {
+        bool result = false;
+        #if AXIS_IS_TMC(Z)
+          if (monitor_tmc_driver(stepperZ, need_update_error_counters, need_debug_reporting)) result = true;
+        #endif
+        #if AXIS_IS_TMC(Z2)
+          if (monitor_tmc_driver(stepperZ2, need_update_error_counters, need_debug_reporting)) result = true;
+        #endif
+        #if AXIS_IS_TMC(Z3)
+          if (monitor_tmc_driver(stepperZ3, need_update_error_counters, need_debug_reporting)) result = true;
+        #endif
+        #if AXIS_IS_TMC(Z4)
+          if (monitor_tmc_driver(stepperZ4, need_update_error_counters, need_debug_reporting)) result = true;
+        #endif
+        if (result) {
           #if AXIS_IS_TMC(Z)
             step_current_down(stepperZ);
           #endif
           #if AXIS_IS_TMC(Z2)
             step_current_down(stepperZ2);
           #endif
+          #if AXIS_IS_TMC(Z3)
+            step_current_down(stepperZ3);
+          #endif
+          #if AXIS_IS_TMC(Z4)
+            step_current_down(stepperZ4);
+          #endif
         }
+      }
       #endif
+
       #if AXIS_IS_TMC(E0)
         (void)monitor_tmc_driver(stepperE0, need_update_error_counters, need_debug_reporting);
       #endif
@@ -741,6 +758,9 @@
       #if AXIS_IS_TMC(Z3)
         tmc_status(stepperZ3, i);
       #endif
+      #if AXIS_IS_TMC(Z4)
+        tmc_status(stepperZ4, i);
+      #endif
     }
 
     if (print_e) {
@@ -795,6 +815,9 @@
       #endif
       #if AXIS_IS_TMC(Z3)
         tmc_parse_drv_status(stepperZ3, i);
+      #endif
+      #if AXIS_IS_TMC(Z4)
+        tmc_parse_drv_status(stepperZ4, i);
       #endif
     }
 
@@ -971,6 +994,9 @@
       #if AXIS_IS_TMC(Z3)
         tmc_get_registers(stepperZ3, i);
       #endif
+      #if AXIS_IS_TMC(Z4)
+        tmc_get_registers(stepperZ4, i);
+      #endif
     }
 
     if (print_e) {
@@ -1077,6 +1103,9 @@
     #if AXIS_HAS_SPI(Z3)
       SET_CS_PIN(Z3);
     #endif
+    #if AXIS_HAS_SPI(Z4)
+      SET_CS_PIN(Z4);
+    #endif
     #if AXIS_HAS_SPI(E0)
       SET_CS_PIN(E0);
     #endif
@@ -1150,6 +1179,9 @@ void test_tmc_connection(const bool test_x, const bool test_y, const bool test_z
     #endif
     #if AXIS_IS_TMC(Z3)
       axis_connection += test_connection(stepperZ3);
+    #endif
+    #if AXIS_IS_TMC(Z4)
+      axis_connection += test_connection(stepperZ4);
     #endif
   }
 

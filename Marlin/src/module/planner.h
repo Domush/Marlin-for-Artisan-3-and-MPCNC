@@ -30,7 +30,7 @@
  * Copyright (c) 2009-2011 Simen Svale Skogsrud
  */
 
-#include "../Marlin.h"
+#include "../MarlinCore.h"
 
 #include "motion.h"
 #include "../gcode/queue.h"
@@ -57,7 +57,8 @@
 
 // Feedrate for manual moves
 #ifdef MANUAL_FEEDRATE
-  constexpr xyze_feedrate_t manual_feedrate_mm_m = MANUAL_FEEDRATE;
+  constexpr xyze_feedrate_t _mf = MANUAL_FEEDRATE,
+                            manual_feedrate_mm_s { _mf.x / 60.0f, _mf.y / 60.0f, _mf.z / 60.0f, _mf.e / 60.0f };
 #endif
 
 enum BlockFlagBit : char {
