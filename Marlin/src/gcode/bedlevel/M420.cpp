@@ -1,6 +1,6 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * Based on Sprinter and grbl.
  * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
@@ -235,7 +235,7 @@ void GcodeSuite::M420() {
 
   // Error if leveling failed to enable or reenable
   if (to_enable && !planner.leveling_active)
-    SERIAL_ERROR_MSG(MSG_ERR_M420_FAILED);
+    SERIAL_ERROR_MSG(STR_ERR_M420_FAILED);
 
   SERIAL_ECHO_START();
   SERIAL_ECHOPGM("Bed Leveling ");
@@ -247,7 +247,7 @@ void GcodeSuite::M420() {
     if (planner.z_fade_height > 0.0)
       SERIAL_ECHOLN(planner.z_fade_height);
     else
-      SERIAL_ECHOLNPGM(MSG_OFF);
+      SERIAL_ECHOLNPGM(STR_OFF);
   #endif
 
   // Report change in position

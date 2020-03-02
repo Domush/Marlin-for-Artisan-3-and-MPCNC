@@ -1,6 +1,6 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * Based on Sprinter and grbl.
  * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
@@ -38,7 +38,7 @@
   #include "../../../gcode/gcode.h"
   #include "../../../libs/least_squares_fit.h"
 
-  #if ENABLED(DUAL_X_CARRIAGE)
+  #if HOTENDS > 1
     #include "../../../module/tool_change.h"
   #endif
 
@@ -305,12 +305,15 @@
 
     const int8_t p_val = parser.intval('P', -1);
     const bool may_move = p_val == 1 || p_val == 2 || p_val == 4 || parser.seen('J');
+    #if HOTENDS > 1
+      const uint8_t old_tool_index = active_extruder;
+    #endif
 
     // Check for commands that require the printer to be homed
     if (may_move) {
       planner.synchronize();
       if (axes_need_homing()) gcode.home_all_axes();
-      #if ENABLED(DUAL_X_CARRIAGE)
+      #if HOTENDS > 1
         if (active_extruder != 0) tool_change(0);
       #endif
     }
@@ -684,6 +687,9 @@
       UNUSED(probe_deployed);
     #endif
 
+    #if HOTENDS > 1
+      tool_change(old_tool_index);
+    #endif
     return;
   }
 
@@ -1243,7 +1249,7 @@
         if (isnan(z_values[i][j])) {                  // Invalid mesh point?
 
           // Skip points the probe can't reach
-          if (!position_is_reachable_by_probe(mesh_index_to_xpos(i), mesh_index_to_ypos(j)))
+          if (!probe.can_reach(mesh_index_to_xpos(i), mesh_index_to_ypos(j)))
             continue;
 
           found_a_NAN = true;
@@ -1310,7 +1316,7 @@
           // Also for round beds, there are grid points outside the bed the nozzle can't reach.
           // Prune them from the list and ignore them till the next Phase (manual nozzle probing).
 
-          if (probe_relative ? !position_is_reachable_by_probe(mpos) : !position_is_reachable(mpos))
+          if (!(probe_relative ? probe.can_reach(mpos) : position_is_reachable(mpos)))
             continue;
 
           // Reachable. Check if it's the best_so_far location to the nozzle.

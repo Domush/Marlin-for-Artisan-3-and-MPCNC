@@ -1,6 +1,6 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * Based on Sprinter and grbl.
  * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
@@ -81,7 +81,7 @@
           #endif
           lcd_put_u8str_P(GET_TEXT(MSG_BABYSTEP_TOTAL));
           lcd_put_wchar(':');
-          lcd_put_u8str(LCD_Z_OFFSET_FUNC(spm * babystep.axis_total[BS_TOTAL_AXIS(axis)]));
+          lcd_put_u8str(LCD_Z_OFFSET_FUNC(spm * babystep.axis_total[BS_TOTAL_IND(axis)]));
         }
       #endif
     }

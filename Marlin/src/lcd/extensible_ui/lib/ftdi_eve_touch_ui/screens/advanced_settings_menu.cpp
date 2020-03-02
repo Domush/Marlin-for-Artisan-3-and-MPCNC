@@ -58,13 +58,13 @@ void AdvancedSettingsMenu::onRedraw(draw_mode_t what) {
       .tag(16).button( BTN_POS(1,6),  BTN_SIZE(1,1), GET_TEXT_F(MSG_CASE_LIGHT))
       .tag(3) .button( BTN_POS(2,1), BTN_SIZE(1,1), GET_TEXT_F(MSG_STEPS_PER_MM))
       .enabled(
-        #if HAS_TRINAMIC
+        #if HAS_TRINAMIC_CONFIG
           1
         #endif
       )
       .tag(13).button( BTN_POS(1,4), BTN_SIZE(1,1), GET_TEXT_F(MSG_TMC_CURRENT))
       .enabled(
-        #if HAS_TRINAMIC
+        #if HAS_TRINAMIC_CONFIG
           1
         #endif
       )
@@ -84,7 +84,7 @@ void AdvancedSettingsMenu::onRedraw(draw_mode_t what) {
       .tag(12).button( BTN_POS(1,5), BTN_SIZE(1,1), GET_TEXT_F(MSG_LCD_ENDSTOPS))
       .tag(15).button( BTN_POS(2,6), BTN_SIZE(1,1), GET_TEXT_F(MSG_DISPLAY_MENU))
       .tag(9) .button( BTN_POS(1,8), BTN_SIZE(2,1), GET_TEXT_F(MSG_INTERFACE_SETTINGS))
-      .tag(10).button( BTN_POS(1,9), BTN_SIZE(2,1), GET_TEXT_F(MSG_RESTORE_FAILSAFE))
+      .tag(10).button( BTN_POS(1,9), BTN_SIZE(2,1), GET_TEXT_F(MSG_RESTORE_DEFAULTS))
       .tag(5) .button( BTN_POS(2,2), BTN_SIZE(1,1), GET_TEXT_F(MSG_VELOCITY))
       .tag(6) .button( BTN_POS(2,3), BTN_SIZE(1,1), GET_TEXT_F(MSG_ACCELERATION))
       #if DISABLED(CLASSIC_JERK)
@@ -120,13 +120,13 @@ void AdvancedSettingsMenu::onRedraw(draw_mode_t what) {
       .enabled(1)
       .tag(3) .button( BTN_POS(2,1),  BTN_SIZE(1,1), GET_TEXT_F(MSG_STEPS_PER_MM))
       .enabled(
-        #if HAS_TRINAMIC
+        #if HAS_TRINAMIC_CONFIG
           1
         #endif
       )
       .tag(13).button( BTN_POS(3,1), BTN_SIZE(1,1), GET_TEXT_F(MSG_TMC_CURRENT))
       .enabled(
-        #if HAS_TRINAMIC
+        #if HAS_TRINAMIC_CONFIG
           1
         #endif
       )
@@ -154,7 +154,7 @@ void AdvancedSettingsMenu::onRedraw(draw_mode_t what) {
       .tag(11).button( BTN_POS(1,3),  BTN_SIZE(1,1), GET_TEXT_F(MSG_FILAMENT))
       .tag(15).button( BTN_POS(3,5),  BTN_SIZE(1,1), GET_TEXT_F(MSG_DISPLAY_MENU))
       .tag(9) .button( BTN_POS(1,5),  BTN_SIZE(2,1), GET_TEXT_F(MSG_INTERFACE_SETTINGS))
-      .tag(10).button( BTN_POS(1,6),  BTN_SIZE(2,1), GET_TEXT_F(MSG_RESTORE_FAILSAFE))
+      .tag(10).button( BTN_POS(1,6),  BTN_SIZE(2,1), GET_TEXT_F(MSG_RESTORE_DEFAULTS))
       .colors(action_btn)
       .tag(1) .button( BTN_POS(3,6),  BTN_SIZE(1,1), GET_TEXT_F(MSG_BACK));
     #endif
@@ -189,7 +189,7 @@ bool AdvancedSettingsMenu::onTouchEnd(uint8_t tag) {
     case 11: GOTO_SCREEN(FilamentMenu); break;
     #endif
     case 12: GOTO_SCREEN(EndstopStatesScreen); break;
-    #if HAS_TRINAMIC
+    #if HAS_TRINAMIC_CONFIG
     case 13: GOTO_SCREEN(StepperCurrentScreen); break;
     case 14: GOTO_SCREEN(StepperBumpSensitivityScreen); break;
     #endif

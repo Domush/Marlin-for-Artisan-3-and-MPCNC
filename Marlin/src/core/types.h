@@ -1,6 +1,6 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * Based on Sprinter and grbl.
  * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
@@ -24,7 +24,7 @@
 #include <math.h>
 #include <stddef.h>
 
-#include "millis_t.h"
+#include "../inc/MarlinConfigPre.h"
 
 class __FlashStringHelper;
 typedef const __FlashStringHelper *progmem_str;
@@ -483,3 +483,4 @@ struct XYZEval {
 #undef FI
 
 const xyze_char_t axis_codes { 'X', 'Y', 'Z', 'E' };
+#define XYZ_CHAR(A) ('X' + char(A))

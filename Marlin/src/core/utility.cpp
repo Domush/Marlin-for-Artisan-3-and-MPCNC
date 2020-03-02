@@ -1,6 +1,6 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * Based on Sprinter and grbl.
  * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
@@ -34,6 +34,18 @@ void safe_delay(millis_t ms) {
   delay(ms);
   thermalManager.manage_heater(); // This keeps us safe if too many small safe_delay() calls are made
 }
+
+// A delay to provide brittle hosts time to receive bytes
+#if ENABLED(SERIAL_OVERRUN_PROTECTION)
+
+  #include "../gcode/gcode.h" // for set_autoreport_paused
+
+  void serial_delay(const millis_t ms) {
+    const bool was = gcode.set_autoreport_paused(true);
+    safe_delay(ms);
+    gcode.set_autoreport_paused(was);
+  }
+#endif
 
 #if ENABLED(DEBUG_LEVELING_FEATURE)
 
@@ -127,17 +139,17 @@ void safe_delay(millis_t ms) {
     #endif
 
     #if HAS_ABL_OR_UBL
-      SERIAL_ECHOLNPGM("Auto Bed Leveling: "
-        #if ENABLED(AUTO_BED_LEVELING_LINEAR)
-          "LINEAR"
-        #elif ENABLED(AUTO_BED_LEVELING_BILINEAR)
-          "BILINEAR"
-        #elif ENABLED(AUTO_BED_LEVELING_3POINT)
-          "3POINT"
-        #elif ENABLED(AUTO_BED_LEVELING_UBL)
-          "UBL"
-        #endif
-      );
+      SERIAL_ECHOPGM("Auto Bed Leveling: ");
+      #if ENABLED(AUTO_BED_LEVELING_LINEAR)
+        SERIAL_ECHOLNPGM("LINEAR");
+      #elif ENABLED(AUTO_BED_LEVELING_BILINEAR)
+        SERIAL_ECHOLNPGM("BILINEAR");
+      #elif ENABLED(AUTO_BED_LEVELING_3POINT)
+        SERIAL_ECHOLNPGM("3POINT");
+      #elif ENABLED(AUTO_BED_LEVELING_UBL)
+        SERIAL_ECHOLNPGM("UBL");
+      #endif
+
       if (planner.leveling_active) {
         SERIAL_ECHOLNPGM(" (enabled)");
         #if ENABLED(ENABLE_LEVELING_FADE_HEIGHT)
@@ -148,7 +160,7 @@ void safe_delay(millis_t ms) {
           SERIAL_ECHOPGM("ABL Adjustment X");
           LOOP_XYZ(a) {
             float v = planner.get_axis_position_mm(AxisEnum(a)) - current_position[a];
-            SERIAL_CHAR(' ', 'X' + char(a));
+            SERIAL_CHAR(' ', XYZ_CHAR(a));
             if (v > 0) SERIAL_CHAR('+');
             SERIAL_ECHO(v);
           }

@@ -1,6 +1,6 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * Based on Sprinter and grbl.
  * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
@@ -43,7 +43,7 @@ void GcodeSuite::G30() {
   const xy_pos_t pos = { parser.linearval('X', current_position.x + probe.offset_xy.x),
                          parser.linearval('Y', current_position.y + probe.offset_xy.y) };
 
-  if (!position_is_reachable_by_probe(pos)) return;
+  if (!probe.can_reach(pos)) return;
 
   // Disable leveling so the planner won't mess with us
   #if HAS_LEVELING

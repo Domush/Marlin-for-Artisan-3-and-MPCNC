@@ -1,6 +1,6 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * Based on Sprinter and grbl.
  * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
@@ -462,7 +462,7 @@ void MMU2::tool_change(uint8_t index) {
     ENABLE_AXIS_E0();
 
     SERIAL_ECHO_START();
-    SERIAL_ECHOLNPAIR(MSG_ACTIVE_EXTRUDER, int(extruder));
+    SERIAL_ECHOLNPAIR(STR_ACTIVE_EXTRUDER, int(extruder));
 
     ui.reset_status();
   }

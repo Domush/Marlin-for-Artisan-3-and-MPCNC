@@ -1,6 +1,6 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * Based on Sprinter and grbl.
  * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
@@ -417,17 +417,7 @@ G29_TYPE GcodeSuite::G29() {
         );
       }
 
-      if (
-        #if IS_SCARA || ENABLED(DELTA)
-             !position_is_reachable_by_probe(probe_position_lf.x, 0)
-          || !position_is_reachable_by_probe(probe_position_rb.x, 0)
-          || !position_is_reachable_by_probe(0, probe_position_lf.y)
-          || !position_is_reachable_by_probe(0, probe_position_rb.y)
-        #else
-             !position_is_reachable_by_probe(probe_position_lf)
-          || !position_is_reachable_by_probe(probe_position_rb)
-        #endif
-      ) {
+      if (!probe.good_bounds(probe_position_lf, probe_position_rb)) {
         SERIAL_ECHOLNPGM("? (L,R,F,B) out of bounds.");
         G29_RETURN(false);
       }
@@ -704,7 +694,7 @@ G29_TYPE GcodeSuite::G29() {
 
           #if IS_KINEMATIC
             // Avoid probing outside the round or hexagonal area
-            if (!position_is_reachable_by_probe(probePos)) continue;
+            if (!probe.can_reach(probePos)) continue;
           #endif
 
           if (verbose_level) SERIAL_ECHOLNPAIR("Probing mesh point ", int(pt_index), "/", int(GRID_MAX_POINTS), ".");
@@ -958,10 +948,8 @@ G29_TYPE GcodeSuite::G29() {
   // Restore state after probing
   if (!faux) restore_feedrate_and_scaling();
 
-  if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("<<< G29");
-
-  if (planner.leveling_active)
-    sync_plan_position();
+  // Sync the planner from the current_position
+  if (planner.leveling_active) sync_plan_position();
 
   #if HAS_BED_PROBE && defined(Z_AFTER_PROBING)
     probe.move_z_after_probing();
@@ -974,6 +962,8 @@ G29_TYPE GcodeSuite::G29() {
   #endif
 
   report_current_position();
+
+  if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPGM("<<< G29");
 
   G29_RETURN(isnan(measured_z));
 }

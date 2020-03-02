@@ -1,6 +1,6 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * Based on Sprinter and grbl.
  * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
@@ -104,7 +104,7 @@ xyze_pos_t current_position = { X_HOME_POS, Y_HOME_POS, Z_HOME_POS };
 /**
  * Cartesian Destination
  *   The destination for a move, filled in by G-code movement commands,
- *   and expected by functions like 'prepare_move_to_destination'.
+ *   and expected by functions like 'prepare_line_to_destination'.
  *   G-codes can set destination using 'get_destination_from_command'
  */
 xyze_pos_t destination; // {0}
@@ -272,20 +272,21 @@ void get_cartesian_from_steppers() {
  */
 void set_current_from_steppers_for_axis(const AxisEnum axis) {
   get_cartesian_from_steppers();
+  xyze_pos_t pos = cartes;
+  pos.e = planner.get_axis_position_mm(E_AXIS);
 
   #if HAS_POSITION_MODIFIERS
-    xyze_pos_t pos = { cartes.x, cartes.y, cartes.z, current_position.e };
     planner.unapply_modifiers(pos
       #if HAS_LEVELING
         , true
       #endif
     );
-    const xyze_pos_t &cartes = pos;
   #endif
+
   if (axis == ALL_AXES)
-    current_position = cartes;
+    current_position = pos;
   else
-    current_position[axis] = cartes[axis];
+    current_position[axis] = pos[axis];
 }
 
 /**
@@ -339,7 +340,7 @@ void _internal_move_to_destination(const feedRate_t &fr_mm_s/*=0.0f*/
       prepare_fast_move_to_destination();
     else
   #endif
-      prepare_move_to_destination();
+      prepare_line_to_destination();
 
   feedrate_mm_s = old_feedrate;
   feedrate_percentage = old_pct;
@@ -587,7 +588,7 @@ void restore_feedrate_and_scaling() {
     #endif
 
   if (DEBUGGING(LEVELING))
-    SERIAL_ECHOLNPAIR("Axis ", axis_codes[axis], " min:", soft_endstop.min[axis], " max:", soft_endstop.max[axis]);
+    SERIAL_ECHOLNPAIR("Axis ", XYZ_CHAR(axis), " min:", soft_endstop.min[axis], " max:", soft_endstop.max[axis]);
 }
 
   /**
@@ -621,7 +622,7 @@ void restore_feedrate_and_scaling() {
       ) {
         const float dist_2 = HYPOT2(target.x - offs.x, target.y - offs.y);
         if (dist_2 > delta_max_radius_2)
-          target *= delta_max_radius / SQRT(dist_2); // 200 / 300 = 0.66
+          target *= float(delta_max_radius / SQRT(dist_2)); // 200 / 300 = 0.66
       }
 
     #else
@@ -659,6 +660,16 @@ void restore_feedrate_and_scaling() {
 #endif // HAS_SOFTWARE_ENDSTOPS
 
 #if !UBL_SEGMENTED
+
+FORCE_INLINE void segment_idle(millis_t &next_idle_ms) {
+  const millis_t ms = millis();
+  thermalManager.manage_heater();  // This returns immediately if not really needed.
+  if (ELAPSED(ms, next_idle_ms)) {
+    next_idle_ms = ms + 200UL;
+    idle();
+  }
+}
+
 #if IS_KINEMATIC
 
   #if IS_SCARA
@@ -678,7 +689,7 @@ void restore_feedrate_and_scaling() {
   /**
    * Prepare a linear move in a DELTA or SCARA setup.
    *
-   * Called from prepare_move_to_destination as the
+   * Called from prepare_line_to_destination as the
    * default Delta/SCARA segmenter.
    *
    * This calls planner.buffer_line several times, adding
@@ -751,17 +762,10 @@ void restore_feedrate_and_scaling() {
     xyze_pos_t raw = current_position;
 
     // Calculate and execute the segments
+    millis_t next_idle_ms = millis() + 200UL;
     while (--segments) {
-
-      static millis_t next_idle_ms = millis() + 200UL;
-      thermalManager.manage_heater();  // This returns immediately if not really needed.
-      if (ELAPSED(millis(), next_idle_ms)) {
-        next_idle_ms = millis() + 200UL;
-        idle();
-      }
-
+      segment_idle(next_idle_ms);
       raw += segment_distance;
-
       if (!planner.buffer_line(raw, scaled_fr_mm_s, active_extruder, cartesian_segment_mm
         #if ENABLED(SCARA_FEEDRATE_SCALING)
           , inv_duration
@@ -830,13 +834,9 @@ void restore_feedrate_and_scaling() {
       xyze_pos_t raw = current_position;
 
       // Calculate and execute the segments
+      millis_t next_idle_ms = millis() + 200UL;
       while (--segments) {
-        static millis_t next_idle_ms = millis() + 200UL;
-        thermalManager.manage_heater();  // This returns immediately if not really needed.
-        if (ELAPSED(millis(), next_idle_ms)) {
-          next_idle_ms = millis() + 200UL;
-          idle();
-        }
+        segment_idle(next_idle_ms);
         raw += segment_distance;
         if (!planner.buffer_line(raw, fr_mm_s, active_extruder, cartesian_segment_mm
           #if ENABLED(SCARA_FEEDRATE_SCALING)
@@ -865,7 +865,7 @@ void restore_feedrate_and_scaling() {
    *
    * Return true if 'current_position' was set to 'destination'
    */
-  inline bool prepare_move_to_destination_cartesian() {
+  inline bool line_to_destination_cartesian() {
     const float scaled_fr_mm_s = MMS_SCALED(feedrate_mm_s);
     #if HAS_MESH
       if (planner.leveling_active && planner.leveling_active_at_z(destination.z)) {
@@ -1008,7 +1008,7 @@ void restore_feedrate_and_scaling() {
  *
  * Before exit, current_position is set to destination.
  */
-void prepare_move_to_destination() {
+void prepare_line_to_destination() {
   apply_motion_limits(destination);
 
   #if EITHER(PREVENT_COLD_EXTRUSION, PREVENT_LENGTHY_EXTRUDE)
@@ -1018,7 +1018,7 @@ void prepare_move_to_destination() {
 
       #if ENABLED(PREVENT_COLD_EXTRUSION)
         ignore_e = thermalManager.tooColdToExtrude(active_extruder);
-        if (ignore_e) SERIAL_ECHO_MSG(MSG_ERR_COLD_EXTRUDE_STOP);
+        if (ignore_e) SERIAL_ECHO_MSG(STR_ERR_COLD_EXTRUDE_STOP);
       #endif
 
       #if ENABLED(PREVENT_LENGTHY_EXTRUDE)
@@ -1030,13 +1030,13 @@ void prepare_move_to_destination() {
             MIXER_STEPPER_LOOP(e) {
               if (e_delta * collector[e] > (EXTRUDE_MAXLENGTH)) {
                 ignore_e = true;
-                SERIAL_ECHO_MSG(MSG_ERR_LONG_EXTRUDE_STOP);
+                SERIAL_ECHO_MSG(STR_ERR_LONG_EXTRUDE_STOP);
                 break;
               }
             }
           #else
             ignore_e = true;
-            SERIAL_ECHO_MSG(MSG_ERR_LONG_EXTRUDE_STOP);
+            SERIAL_ECHO_MSG(STR_ERR_LONG_EXTRUDE_STOP);
           #endif
         }
       #endif
@@ -1058,12 +1058,12 @@ void prepare_move_to_destination() {
       #if IS_KINEMATIC // UBL using Kinematic / Cartesian cases as a workaround for now.
         ubl.line_to_destination_segmented(MMS_SCALED(feedrate_mm_s))
       #else
-        prepare_move_to_destination_cartesian()
+        line_to_destination_cartesian()
       #endif
     #elif IS_KINEMATIC
       line_to_destination_kinematic()
     #else
-      prepare_move_to_destination_cartesian()
+      line_to_destination_cartesian()
     #endif
   ) return;
 
@@ -1779,7 +1779,7 @@ void homeaxis(const AxisEnum axis) {
 #if HAS_WORKSPACE_OFFSET
   void update_workspace_offset(const AxisEnum axis) {
     workspace_offset[axis] = home_offset[axis] + position_shift[axis];
-    if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Axis ", axis_codes[axis], " home_offset = ", home_offset[axis], " position_shift = ", position_shift[axis]);
+    if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Axis ", XYZ_CHAR(axis), " home_offset = ", home_offset[axis], " position_shift = ", position_shift[axis]);
   }
 #endif
 

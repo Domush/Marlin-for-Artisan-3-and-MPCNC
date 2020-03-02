@@ -1,6 +1,6 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * Based on Sprinter and grbl.
  * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
@@ -28,7 +28,7 @@
 #endif
 
 #define HAS_ENCODER_ACTION (HAS_LCD_MENU || ENABLED(ULTIPANEL_FEEDMULTIPLY))
-#define HAS_ENCODER_WHEEL  ((!HAS_ADC_BUTTONS && ENABLED(NEWPANEL)) || BUTTON_EXISTS(EN1, EN2))
+#define HAS_ENCODER_WHEEL  ((!HAS_ADC_BUTTONS && ENABLED(NEWPANEL)) || BUTTONS_EXIST(EN1, EN2))
 #define HAS_DIGITAL_BUTTONS (HAS_ENCODER_WHEEL || ANY_BUTTON(ENC, BACK, UP, DWN, LFT, RT))
 #define HAS_SHIFT_ENCODER   (!HAS_ADC_BUTTONS && (ENABLED(REPRAPWORLD_KEYPAD) || (HAS_SPI_LCD && DISABLED(NEWPANEL))))
 
@@ -402,7 +402,7 @@ public:
     static void set_status(const char* const message, const bool persist=false);
     static void set_status_P(PGM_P const message, const int8_t level=0);
     static void status_printf_P(const uint8_t level, PGM_P const fmt, ...);
-    static void reset_status();
+    static void reset_status(const bool no_welcome=false);
 
   #else // No LCD
 
@@ -416,7 +416,7 @@ public:
     static inline void refresh() {}
     static inline void return_to_status() {}
     static inline void set_alert_status_P(PGM_P const) {}
-    static inline void reset_status() {}
+    static inline void reset_status(const bool=false) {}
     static inline void reset_alert_level() {}
     static constexpr bool has_status() { return false; }
 

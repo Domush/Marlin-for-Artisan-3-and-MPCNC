@@ -1,6 +1,6 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * Based on Sprinter and grbl.
  * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
@@ -361,6 +361,15 @@
 #define HAS_ADC_BUTTONS      ENABLED(ADC_KEYPAD)
 #define HAS_DGUS_LCD         ANY(DGUS_LCD_UI_ORIGIN, DGUS_LCD_UI_FYSETC, DGUS_LCD_UI_HIPRECY)
 
+#if HAS_GRAPHICAL_LCD
+  #ifndef LCD_PIXEL_WIDTH
+    #define LCD_PIXEL_WIDTH 128
+  #endif
+  #ifndef LCD_PIXEL_HEIGHT
+    #define LCD_PIXEL_HEIGHT 64
+  #endif
+#endif
+
 /**
  * Extruders have some combination of stepper motors and hotends
  * so we separate these concepts into the defines:
@@ -424,22 +433,41 @@
 #ifndef HOTENDS
   #define HOTENDS EXTRUDERS
 #endif
-
 #ifndef E_STEPPERS
   #define E_STEPPERS EXTRUDERS
 #endif
-
 #ifndef E_MANUAL
   #define E_MANUAL EXTRUDERS
 #endif
 
+// Helper macros for extruder and hotend arrays
 #define HOTEND_LOOP() for (int8_t e = 0; e < HOTENDS; e++)
+#define ARRAY_BY_EXTRUDERS(V...) ARRAY_N(EXTRUDERS, V)
+#define ARRAY_BY_EXTRUDERS1(v1) ARRAY_BY_EXTRUDERS(v1, v1, v1, v1, v1, v1, v1, v1)
+#define ARRAY_BY_HOTENDS(V...) ARRAY_N(HOTENDS, V)
+#define ARRAY_BY_HOTENDS1(v1) ARRAY_BY_HOTENDS(v1, v1, v1, v1, v1, v1, v1, v1)
 
 #define DO_SWITCH_EXTRUDER (ENABLED(SWITCHING_EXTRUDER) && (DISABLED(SWITCHING_NOZZLE) || SWITCHING_EXTRUDER_SERVO_NR != SWITCHING_NOZZLE_SERVO_NR))
 #define SWITCHING_NOZZLE_TWO_SERVOS defined(SWITCHING_NOZZLE_E1_SERVO_NR)
 
-#define HAS_HOTEND_OFFSET (HOTENDS > 1)
 #define HAS_DUPLICATION_MODE EITHER(DUAL_X_CARRIAGE, MULTI_NOZZLE_DUPLICATION)
+
+#define HAS_HOTEND_OFFSET (HOTENDS > 1)
+
+/**
+ * Default hotend offsets, if not defined
+ */
+#if HAS_HOTEND_OFFSET
+  #ifndef HOTEND_OFFSET_X
+    #define HOTEND_OFFSET_X { 0 } // X offsets for each extruder
+  #endif
+  #ifndef HOTEND_OFFSET_Y
+    #define HOTEND_OFFSET_Y { 0 } // Y offsets for each extruder
+  #endif
+  #ifndef HOTEND_OFFSET_Z
+    #define HOTEND_OFFSET_Z { 0 } // Z offsets for each extruder
+  #endif
+#endif
 
 /**
  * DISTINCT_E_FACTORS affects how some E factors are accessed
@@ -490,9 +518,13 @@
 #endif
 
 /**
- * Set a flag for a servo probe
+ * Set a flag for a servo probe (or BLTouch)
  */
 #define HAS_Z_SERVO_PROBE (defined(Z_PROBE_SERVO_NR) && Z_PROBE_SERVO_NR >= 0)
+#define HAS_SERVO_ANGLES (HAS_Z_SERVO_PROBE || EITHER(SWITCHING_EXTRUDER, SWITCHING_NOZZLE))
+#if !HAS_SERVO_ANGLES
+  #undef EDITABLE_SERVO_ANGLES
+#endif
 
 /**
  * Set flags for enabled probes
@@ -562,10 +594,23 @@
 
 #define IS_RE_ARM_BOARD MB(RAMPS_14_RE_ARM_EFB, RAMPS_14_RE_ARM_EEB, RAMPS_14_RE_ARM_EFF, RAMPS_14_RE_ARM_EEF, RAMPS_14_RE_ARM_SF)
 
-#define HAS_SDCARD_CONNECTION EITHER(TARGET_LPC1768, ADAFRUIT_GRAND_CENTRAL_M4)
+// Linear advance uses Jerk since E is an isolated axis
+#define HAS_LINEAR_E_JERK  (DISABLED(CLASSIC_JERK) && ENABLED(LIN_ADVANCE))
 
-#define HAS_LINEAR_E_JERK (DISABLED(CLASSIC_JERK) && ENABLED(LIN_ADVANCE))
+// This flag indicates some kind of jerk storage is needed
+#define HAS_CLASSIC_JERK   (ENABLED(CLASSIC_JERK) || IS_KINEMATIC)
+
+// E jerk exists with JD disabled (of course) but also when Linear Advance is disabled on Delta/SCARA
+#define HAS_CLASSIC_E_JERK (ENABLED(CLASSIC_JERK) || (IS_KINEMATIC && DISABLED(LIN_ADVANCE)))
 
 #ifndef SPI_SPEED
   #define SPI_SPEED SPI_FULL_SPEED
+#endif
+
+/**
+ * This setting is also used by M109 when trying to calculate
+ * a ballpark safe margin to prevent wait-forever situation.
+ */
+#ifndef EXTRUDE_MINTEMP
+  #define EXTRUDE_MINTEMP 170
 #endif

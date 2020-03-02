@@ -1,6 +1,6 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * Based on Sprinter and grbl.
  * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
@@ -85,13 +85,13 @@ void menu_cancelobject();
     BACK_ITEM(MSG_ADVANCED_SETTINGS);
     #define EDIT_CURRENT_PWM(LABEL,I) EDIT_ITEM_P(long5, PSTR(LABEL), &stepper.motor_current_setting[I], 100, 2000, stepper.refresh_motor_power)
     #if PIN_EXISTS(MOTOR_CURRENT_PWM_XY)
-      EDIT_CURRENT_PWM(MSG_X MSG_Y, 0);
+      EDIT_CURRENT_PWM(STR_X STR_Y, 0);
     #endif
     #if PIN_EXISTS(MOTOR_CURRENT_PWM_Z)
-      EDIT_CURRENT_PWM(MSG_Z, 1);
+      EDIT_CURRENT_PWM(STR_Z, 1);
     #endif
     #if PIN_EXISTS(MOTOR_CURRENT_PWM_E)
-      EDIT_CURRENT_PWM(MSG_E, 2);
+      EDIT_CURRENT_PWM(STR_E, 2);
     #endif
     END_MENU();
   }
@@ -544,7 +544,7 @@ void menu_advanced_settings() {
     SUBMENU(MSG_DRIVE_STRENGTH, menu_pwm);
   #endif
 
-  #if HAS_TRINAMIC
+  #if HAS_TRINAMIC_CONFIG
     SUBMENU(MSG_TMC_DRIVERS, menu_tmc);
   #endif
 

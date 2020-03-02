@@ -1,6 +1,6 @@
 /**
  * Marlin 3D Printer Firmware
- * Copyright (c) 2019 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
+ * Copyright (c) 2020 MarlinFirmware [https://github.com/MarlinFirmware/Marlin]
  *
  * Based on Sprinter and grbl.
  * Copyright (c) 2011 Camiel Gubbels / Erik van der Zalm
@@ -27,6 +27,9 @@
   #include "../bedlevel.h"
 
   unified_bed_leveling ubl;
+
+  #include "../../../MarlinCore.h"
+  #include "../../../gcode/gcode.h"
 
   #include "../../../module/configuration_store.h"
   #include "../../../module/planner.h"
@@ -151,9 +154,7 @@
    *   4: Compact Human-Readable
    */
   void unified_bed_leveling::display_map(const int map_type) {
-    #if HAS_AUTO_REPORTING || ENABLED(HOST_KEEPALIVE_FEATURE)
-      suspend_auto_report = true;
-    #endif
+    const bool was = gcode.set_autoreport_paused(true);
 
     constexpr uint8_t eachsp = 1 + 6 + 1,                           // [-3.567]
                       twixt = eachsp * (GRID_MAX_POINTS_X) - 9 * 2; // Leading 4sp, Coordinates 9sp each
@@ -229,9 +230,7 @@
       SERIAL_EOL();
     }
 
-    #if HAS_AUTO_REPORTING || ENABLED(HOST_KEEPALIVE_FEATURE)
-      suspend_auto_report = false;
-    #endif
+    gcode.set_autoreport_paused(was);
   }
 
   bool unified_bed_leveling::sanity_check() {
